@@ -1,12 +1,9 @@
 # TODO:
-# 1. [ X ] Free-text
 # 2. Number
 # 3. Time
 # 4. Choice with default (e.g.) ['Bacon' 'Egg'] default 'Bacon'
   # user must type in freetext
 # 5. Choice with numbers ['Bacon' 'Egg'] default 2
-# 6. Yes or no (accepting 'yes', 'y', 'no', 'n', case-insensitive)
-# 7. True/false (just wrapper around the above one)
 
 (defn question
   [q da h]
@@ -22,3 +19,12 @@
       (and (= a "") da) da
       (not= a "") a
       (ask q da h))))
+
+(defn ask-yn
+  [q &opt &keys {:default da :help h}]
+  (default h "yes or no")
+  (let [a (string/ascii-lower (ask q :default da :help h))]
+    (cond
+      (or (= a "yes") (= a "y")) true
+      (or (= a "no") (= a "n")) false
+      (ask-yn q :default da :help h))))
