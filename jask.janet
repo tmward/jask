@@ -1,5 +1,4 @@
 # TODO:
-# 2. Number
 # 3. Time
 # 4. Choice with default (e.g.) ['Bacon' 'Egg'] default 'Bacon'
   # user must type in freetext
@@ -20,11 +19,18 @@
       (not= a "") a
       (ask q da h))))
 
-(defn ask-yn
+(defn yn
   [q &opt &keys {:default da :help h}]
   (default h "yes or no")
   (let [a (string/ascii-lower (ask q :default da :help h))]
     (cond
       (or (= a "yes") (= a "y")) true
       (or (= a "no") (= a "n")) false
-      (ask-yn q :default da :help h))))
+      (yn q :default da :help h))))
+
+(defn num
+  [q &opt &keys {:default da :help h}]
+  (default h "enter a number")
+  (if-let [n (scan-number (ask q :default da :help h))]
+    n
+    (num q :default da :help h)))
