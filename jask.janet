@@ -2,6 +2,9 @@
 # 4. Choice with default (e.g.) ['Bacon' 'Egg'] default 'Bacon'
   # user must type in freetext
 # 5. Choice with numbers ['Bacon' 'Egg'] default 2
+(defn always-true [&opt &] (true? true))
+(defn myself [x] x)
+
 (defn enumerate
   [xs &opt i]
   (default i 0)
@@ -15,28 +18,33 @@
     (string/format "\n%s [%s] " q da)))
 
 (defn ask
-  [q &opt &keys {:default da :help h}]
-  (let [a (string/trim (getline (question q da h)))]
-    (cond
-      (and (= a "") da) da
-      (not= a "") a
-      (ask q :default da :help h))))
+  [q &opt &keys {:default da :help h :pred valid-a? :parsefunc pf}]
+  (default valid-a? always-true)
+  (default pf myself)
+  (if-let [resp (string/trim (getline (question q da h)))
+           a (if (= resp "") da resp)
+           _ (valid-a? a)]
+    (pf a)
+    (ask q :default da :help h :pred valid-a? :parsefunc pf)))
+
+(defn yn?
+  [s]
+  (any? (map (partial = (string/ascii-lower s)) ["yes" "y" "no" "n"])))
+
+(defn yes?
+  [s]
+  (let [s-lower (string/ascii-lower s)]
+    (or (= s-lower "yes") (= s-lower "y"))))
 
 (defn yn
   [q &opt &keys {:default da :help h}]
   (default h "yes or no")
-  (let [a (string/ascii-lower (ask q :default da :help h))]
-    (cond
-      (or (= a "yes") (= a "y")) true
-      (or (= a "no") (= a "n")) false
-      (yn q :default da :help h))))
+  (ask q :default da :help h :pred yn? :parsefunc yes?))
 
 (defn num
   [q &opt &keys {:default da :help h}]
   (default h "enter a number")
-  (if-let [n (scan-number (ask q :default da :help h))]
-    n
-    (num q :default da :help h)))
+  (ask q :default da :help h :pred scan-number :parsefunc scan-number))
 
 (defn ssmmhh
   [s]
@@ -71,7 +79,4 @@
 (defn time
   [q &opt &keys {:default da :help h}]
   (default h "HH:MM:SS, MM:SS, or SS")
-  (let [a (ask q :default da :help h)]
-    (if (time? a)
-      (ss a)
-      (time q :default da :help h))))
+  (ask q :default da :help h :pred time? :parsefunc ss))
