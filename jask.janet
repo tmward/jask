@@ -38,34 +38,35 @@
     n
     (num q :default da :help h)))
 
-(defn hhmmss
+(defn ssmmhh
   [s]
   (->> s
        (string/split ":")
-       (map scan-number)))
+       (map scan-number)
+       reverse))
 
-(defn valid-hhmmss?
-  [hhmmss]
+(defn ssmmhh?
+  [timestamp]
   (let [preds [|(and (<= 0 $) (< $ 60)) |(and (<= 0 $) (< $ 60)) |(<= 0 $)]]
-    (all true? (map (fn [p n] (p n)) preds (reverse hhmmss)))))
+    (when (<= (length timestamp) 3)
+      (all true? (map |($0 $1) preds timestamp)))))
 
-# allow either one big number in seconds or HH:MM:SS, MM:SS format
 (defn time?
   "Checks if string time is a pos num or in HH:MM:SS or MM:SS format."
   [s]
   (if-let [n (scan-number s)]
     (pos? n)
-    (valid-hhmmss? (hhmmss s))))
+    (ssmmhh? (ssmmhh s))))
 
 (defn n-pow-60-i
   [i n]
   (* n (math/pow 60 i)))
 
 (defn ss
-  "Calculates the time (s) from HH:MM:SS, MM:SS, or SS."
+  "Calculates the time (s) from SS, SS:MM, or SS:MM:HH."
   [s]
-  (let [ssmmhh (reverse (hhmmss s))]
-    (sum (map (partial apply n-pow-60-i) (enumerate ssmmhh)))))
+  (let [timestamp (ssmmhh s)]
+    (sum (map (partial apply n-pow-60-i) (enumerate timestamp)))))
 
 (defn time
   [q &opt &keys {:default da :help h}]
