@@ -1,7 +1,3 @@
-# TODO:
-# 4. Choice with default (e.g.) ['Bacon' 'Egg'] default 'Bacon'
-  # user must type in freetext
-# 5. Choice with numbers ['Bacon' 'Egg'] default 2
 (defn always-true [&opt &] (true? true))
 (defn myself [x] x)
 
@@ -9,6 +5,11 @@
   [xs &opt i]
   (default i 0)
   (seq [x :range [i (+ (length xs) i)]] @[x (xs (- x i))]))
+
+(defn print-choices
+  [xs]
+  (print "Available choices are:")
+  (each i+c (enumerate xs 1) (printf "(%d) %s" ;i+c)))
 
 (defn question
   [q da h]
@@ -18,14 +19,15 @@
     (string/format "\n%s [%s] " q da)))
 
 (defn ask
-  [q &opt &keys {:default da :help h :pred valid-a? :parsefunc pf}]
+  [q &opt &keys {:default da :help h :pred valid-a? :parsefunc pf :choices cs}]
   (default valid-a? always-true)
   (default pf myself)
+  (when cs (print-choices cs))
   (if-let [resp (string/trim (getline (question q da h)))
            a (if (= resp "") da resp)
            _ (valid-a? a)]
     (pf a)
-    (ask q :default da :help h :pred valid-a? :parsefunc pf)))
+    (ask q :default da :help h :pred valid-a? :parsefunc pf :choices cs)))
 
 (defn yn?
   [s]
@@ -80,3 +82,17 @@
   [q &opt &keys {:default da :help h}]
   (default h "HH:MM:SS, MM:SS, or SS")
   (ask q :default da :help h :pred time? :parsefunc ss))
+
+(defn str-is-n-between-lr?
+  [l r]
+  (fn [s]
+    (if-let [n (scan-number s)
+             _ (int? n)]
+      (<= l n r))))
+
+(defn which
+  [q xs &opt &keys {:default da :help h}]
+  (default h "pick a number")
+  (in xs (+ -1 (ask q :default da :help h :choices xs
+                    :pred (str-is-n-between-lr? 1 (length xs))
+                    :parsefunc scan-number))))
