@@ -2,6 +2,10 @@
 # 4. Choice with default (e.g.) ['Bacon' 'Egg'] default 'Bacon'
   # user must type in freetext
 # 5. Choice with numbers ['Bacon' 'Egg'] default 2
+(defn enumerate
+  [xs &opt i]
+  (default i 0)
+  (seq [x :range [i (+ (length xs) i)]] @[x (xs (- x i))]))
 
 (defn question
   [q da h]
@@ -41,7 +45,6 @@
        (map scan-number)))
 
 (defn valid-hhmmss?
-  "Tests if hhmmss array is valid."
   [hhmmss]
   (let [preds [|(and (<= 0 $) (< $ 60)) |(and (<= 0 $) (< $ 60)) |(<= 0 $)]]
     (all true? (map (fn [p n] (p n)) preds (reverse hhmmss)))))
@@ -54,12 +57,15 @@
     (pos? n)
     (valid-hhmmss? (hhmmss s))))
 
+(defn n-pow-60-i
+  [i n]
+  (* n (math/pow 60 i)))
+
 (defn ss
   "Calculates the time (s) from HH:MM:SS, MM:SS, or SS."
   [s]
-  (let [ssmmhh (reverse (hhmmss s))
-        idxs (range 0 (length ssmmhh))]
-    (sum (map (fn [i v] (* v (math/pow 60 i))) idxs ssmmhh))))
+  (let [ssmmhh (reverse (hhmmss s))]
+    (sum (map (partial apply n-pow-60-i) (enumerate ssmmhh)))))
 
 (defn time
   [q &opt &keys {:default da :help h}]
