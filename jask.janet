@@ -1,11 +1,25 @@
+# helper functions
 (defn always-true [&opt &] (true? true))
 (defn myself [x] x)
 (defn parse-then-sub1 [s] (- (scan-number s) 1))
+(defn all-truthy?
+  "Tests if x, or if array/tuple, all items in x, are truthy."
+  [x] 
+  (case (type x)
+    :array (all truthy? x)
+    :tuple (all truthy? x)
+    (truthy? x)))
+(defn get-items
+  "Returns the items in xs at positions in is"
+  [xs is]
+  (map (partial get xs) is))
 
 (defn enumerate
   [xs &opt i]
   (default i 0)
   (seq [x :range [i (+ (length xs) i)]] @[x (xs (- x i))]))
+
+#ask functions
 
 (defn print-choices
   [xs]
@@ -97,3 +111,26 @@
   (in xs (ask q :default da :help h :choices xs
                     :pred (str-is-n-between-lr? 1 (length xs))
                     :parsefunc parse-then-sub1)))
+
+(def sep-num-items
+  ~{:sep (+ (* :s* "," :s*) :s+)
+    :item (cmt (<- :d+) ,scan-number)
+    :subseqitems (any (* :sep :item))
+    :end (* :s* -1)
+    :main (* :item :subseqitems :end)})
+
+(defn order-preference
+  "Returns items from xs specified by idxs in comma/space separated string. nil if fails"
+  [xs s]
+  (when-let [idxs (peg/match sep-num-items s)
+             zero-based-idxs (map |(- $ 1) idxs)]
+    (get-items xs zero-based-idxs)))
+
+(defn which-items
+  "Asks user to choose items from an array/tuple."
+  [q xs &opt &keys {:default da :help h}]
+  (default h "separate items with space or comma, repeats/omissions are ok")
+  (let [op (partial order-preference xs)]
+    (ask q :default da :help h :choices xs
+         :pred (comp all-truthy? op)
+         :parsefunc op)))
