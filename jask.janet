@@ -1,5 +1,6 @@
 (defn always-true [&opt &] (true? true))
 (defn myself [x] x)
+(defn parse-then-sub1 [s] (- (scan-number s) 1))
 
 (defn enumerate
   [xs &opt i]
@@ -93,6 +94,6 @@
 (defn which
   [q xs &opt &keys {:default da :help h}]
   (default h "pick a number")
-  (in xs (+ -1 (ask q :default da :help h :choices xs
+  (in xs (ask q :default da :help h :choices xs
                     :pred (str-is-n-between-lr? 1 (length xs))
-                    :parsefunc scan-number))))
+                    :parsefunc parse-then-sub1)))
